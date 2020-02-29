@@ -31,10 +31,8 @@ public:
 
     template <typename Function, typename... Args>
     auto push(Function &&function, Args &&... args) {
-        static_assert(!std::is_bind_expression<decltype(function)>::value, "Cannot pass the result of a bind expression as arguments");
-
         using returnType = decltype (function(args...));
-        std::packaged_task<returnType()> task(std::bind(function, args...));
+        std::packaged_task<returnType()> task([=]{ return function(args...); });
         std::future<returnType> future = task.get_future();
         {
             std::unique_lock<std::mutex> lock(mutex);
