@@ -10,6 +10,7 @@
 #include <queue>
 #include <thread>
 #include <vector>
+#include <tuple>
 
 class ThreadPool
 {
@@ -32,7 +33,7 @@ public:
     template <typename Function, typename... Args>
     auto push(Function &&function, Args &&... args) {
         using returnType = decltype (function(args...));
-        std::packaged_task<returnType()> task([=]{ return function(args...); });
+        std::packaged_task<returnType()> task([function(std::move(function)), args = std::make_tuple(std::forward<Args>(args)...)]()mutable{ return std::apply(function, std::move(args)); });
         std::future<returnType> future = task.get_future();
         {
             std::unique_lock<std::mutex> lock(mutex);
